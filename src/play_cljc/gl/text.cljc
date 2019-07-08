@@ -15,7 +15,7 @@
    0 -1  0
    0  0  1])
 
-(def ^:private text-vertex-shader
+(def ^:private font-vertex-shader
   {:attributes
    '{a_position vec2}
    :uniforms
@@ -33,7 +33,7 @@
                 0 1))
            (= v_texCoord (.xy (* u_textureMatrix (vec3 a_position 1)))))}})
 
-(def ^:private text-fragment-shader
+(def ^:private font-fragment-shader
   {:precision "mediump float"
    :uniforms
    '{u_image sampler2D}
@@ -52,8 +52,8 @@
              (= outColor (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
 (defn ->font-entity [game {:keys [bitmap bitmap-width bitmap-height] :as baked-font}]
-  (->> {:vertex text-vertex-shader
-        :fragment text-fragment-shader
+  (->> {:vertex font-vertex-shader
+        :fragment font-fragment-shader
         :attributes {'a_position {:data primitives/rect
                                   :type (gl game FLOAT)
                                   :size 2}}

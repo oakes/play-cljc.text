@@ -1,6 +1,6 @@
 ## Introduction
 
-A library for rendering text in OpenGL or WebGL with [play-cljc](https://oakes.github.io/play-cljc).
+A library for rendering text in OpenGL or WebGL with [play-cljc](https://github.com/oakes/play-cljc).
 
 ## Usage
 

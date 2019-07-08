@@ -21,12 +21,12 @@
 (def default-first-char 32)
 (def default-char-buffer-size 2048)
 
-(defn ttf->bitmap
-  ([ttf-path font-height bitmap-width bitmap-height]
-   (ttf->bitmap ttf-path font-height bitmap-width bitmap-height default-first-char default-char-buffer-size))
-  ([ttf-path font-height bitmap-width bitmap-height first-char char-buffer-size]
-   (let [ttf-bytes (cond-> ttf-path
-                           (string? ttf-path)
+(defn ->baked-font
+  ([path font-height bitmap-width bitmap-height]
+   (->baked-font path font-height bitmap-width bitmap-height default-first-char default-char-buffer-size))
+  ([path font-height bitmap-width bitmap-height first-char char-buffer-size]
+   (let [ttf-bytes (cond-> path
+                           (string? path)
                            resource->bytes)
          ttf (doto (java.nio.ByteBuffer/allocateDirect (alength ttf-bytes))
                (.order (java.nio.ByteOrder/nativeOrder))
