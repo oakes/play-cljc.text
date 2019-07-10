@@ -13,12 +13,12 @@
 
 ;; ->font-entity
 
-(defn font-entity-example [game image]
+(defn font-entity-example [game {:keys [data width height] :as image}]
   (gl game disable (gl game CULL_FACE))
   (gl game disable (gl game DEPTH_TEST))
   (assoc game
     :entity
-    (-> (c/compile game (text/->font-entity game image))
+    (-> (c/compile game (text/->font-entity game data width height))
         (assoc :clear {:color [1 1 1 1] :depth 1}))
     :image
     image))

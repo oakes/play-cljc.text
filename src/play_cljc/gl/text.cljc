@@ -48,7 +48,7 @@
            ("else"
              (= outColor (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
-(defn ->font-entity [game {:keys [data width height]}]
+(defn ->font-entity [game data width height]
   (-> (e/->image-entity game data width height)
       (assoc :vertex font-vertex-shader
              :fragment font-fragment-shader)
