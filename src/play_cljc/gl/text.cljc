@@ -5,10 +5,7 @@
             [play-cljc.primitives-2d :as primitives]
             [play-cljc.math :as m]
             #?(:clj  [play-cljc.macros-java :refer [gl]]
-               :cljs [play-cljc.macros-js :refer-macros [gl]]))
-  (:import [org.lwjgl.stb STBTruetype STBTTFontinfo STBTTBakedChar]
-           [org.lwjgl BufferUtils]
-           [org.lwjgl.system MemoryStack]))
+               :cljs [play-cljc.macros-js :refer-macros [gl]])))
 
 (def ^:private flip-y-matrix
   [1  0  0
@@ -51,7 +48,7 @@
            ("else"
              (= outColor (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
-(defn ->font-entity [game {:keys [bitmap bitmap-width bitmap-height] :as baked-font}]
+(defn- ->font-entity* [game bitmap bitmap-width bitmap-height]
   (->> {:vertex font-vertex-shader
         :fragment font-fragment-shader
         :attributes {'a_position {:data primitives/rect
@@ -71,21 +68,25 @@
                                       (gl game LINEAR)}}
                    'u_textureMatrix (m/identity-matrix 3)}
         :width bitmap-width
-        :height bitmap-height
-        :baked-font baked-font}
+        :height bitmap-height}
        e/map->TwoDEntity))
 
+(defn ->font-entity [game bitmap bitmap-width bitmap-height]
+  #?(:clj  (->font-entity* game bitmap bitmap-width bitmap-height)
+     :cljs (e/->image-entity game bitmap bitmap-width bitmap-height)))
+
 (defn ->text-entity [game
-                     {{:keys [baked-chars baseline
-                              font-height bitmap-width
-                              bitmap-height first-char]} :baked-font
-                      :as font-entity}
+                     {:keys [baked-chars baseline
+                             font-height bitmap-width
+                             bitmap-height first-char]
+                      :as baked-font}
+                     font-entity
                      text]
   (loop [text (seq text)
          total 0
          inner-entities []]
     (if-let [ch (first text)]
-      (let [{:keys [x y w h xoff yoff xadv]} (nth baked-chars (- (int ch) first-char))]
+      (let [{:keys [x y w h xoff yoff xadv]} (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))]
         (recur (rest text)
                (+ total xadv)
                (conj inner-entities
