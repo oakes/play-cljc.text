@@ -19,8 +19,9 @@
          (-> .-src (set! ~(text/bitmap->data-uri bitmap)))
          (-> .-onload (set! #(~callback {:data image# :width ~width :height ~height})))))))
 
-(defn ->text-entity-clj [font-key game font-entity text]
-  (gl.text/->text-entity game (font-key baked-fonts) font-entity text))
+(defn load-font-clj [font-key]
+  (font-key baked-fonts))
 
-(defmacro ->text-entity-cljs [font-key game font-entity text]
-  `(gl.text/->text-entity ~game ~(font-key baked-fonts) ~font-entity ~text))
+(defmacro load-font-cljs [font-key]
+  (font-key baked-fonts))
+
