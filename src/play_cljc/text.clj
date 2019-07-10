@@ -14,7 +14,9 @@
         (io/copy out))
     (.toByteArray out)))
 
-(defn ->bitmap [bitmap-width bitmap-height]
+(defn ->bitmap
+  "Returns a map containing a java.nio.ByteBuffer that can store a bitmap of the given dimensions."
+  [bitmap-width bitmap-height]
   {:data (BufferUtils/createByteBuffer (* bitmap-width bitmap-height))
    :width bitmap-width
    :height bitmap-height})
@@ -23,6 +25,7 @@
 (def default-char-buffer-size 2048)
 
 (defn ->baked-font
+  "Returns a map containing all the info needed to crop letters out of a font atlas."
   ([path font-height bitmap]
    (->baked-font path font-height bitmap default-first-char default-char-buffer-size))
   ([path font-height bitmap first-char char-buffer-size]
@@ -73,7 +76,9 @@
       :bitmap-width width
       :bitmap-height height})))
 
-(defn bitmap->data-uri [{:keys [data width height] :as bitmap}]
+(defn bitmap->data-uri
+  "Returns a string containing a data URI for the given bitmap."
+  [{:keys [data width height] :as bitmap}]
   (let [image (promise)]
     (STBImageWrite/stbi_write_png_to_func (reify STBIWriteCallbackI
                                             (invoke [this context data size]
