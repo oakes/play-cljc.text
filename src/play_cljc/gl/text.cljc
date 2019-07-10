@@ -73,7 +73,9 @@
 
 (defn ->font-entity [game bitmap bitmap-width bitmap-height]
   #?(:clj  (->font-entity* game bitmap bitmap-width bitmap-height)
-     :cljs (e/->image-entity game bitmap bitmap-width bitmap-height)))
+     :cljs (assoc (e/->image-entity game bitmap bitmap-width bitmap-height)
+                  :vertex font-vertex-shader
+                  :fragment font-fragment-shader)))
 
 (defn ->text-entity [game
                      {:keys [baked-chars baseline
