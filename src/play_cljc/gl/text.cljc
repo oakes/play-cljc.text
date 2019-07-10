@@ -48,34 +48,18 @@
            ("else"
              (= outColor (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
-(defn- ->font-entity* [game bitmap bitmap-width bitmap-height]
-  (->> {:vertex font-vertex-shader
-        :fragment font-fragment-shader
-        :attributes {'a_position {:data primitives/rect
-                                  :type (gl game FLOAT)
-                                  :size 2}}
-        :uniforms {'u_image {:data bitmap
-                             :opts {:mip-level 0
-                                    :internal-fmt (gl game RED)
-                                    :width bitmap-width
-                                    :height bitmap-height
-                                    :border 0
-                                    :src-fmt (gl game RED)
-                                    :src-type (gl game UNSIGNED_BYTE)}
-                             :params {(gl game TEXTURE_MAG_FILTER)
-                                      (gl game LINEAR)
-                                      (gl game TEXTURE_MIN_FILTER)
-                                      (gl game LINEAR)}}
-                   'u_textureMatrix (m/identity-matrix 3)}
-        :width bitmap-width
-        :height bitmap-height}
-       e/map->TwoDEntity))
-
 (defn ->font-entity [game bitmap bitmap-width bitmap-height]
-  #?(:clj  (->font-entity* game bitmap bitmap-width bitmap-height)
-     :cljs (assoc (e/->image-entity game bitmap bitmap-width bitmap-height)
-                  :vertex font-vertex-shader
-                  :fragment font-fragment-shader)))
+  (-> (e/->image-entity game bitmap bitmap-width bitmap-height)
+      (assoc :vertex font-vertex-shader
+             :fragment font-fragment-shader)
+      #?(:clj (assoc-in [:uniforms 'u_image :opts]
+                        {:mip-level 0
+                         :internal-fmt (gl game RED)
+                         :width bitmap-width
+                         :height bitmap-height
+                         :border 0
+                         :src-fmt (gl game RED)
+                         :src-type (gl game UNSIGNED_BYTE)}))))
 
 (defn ->text-entity [game
                      {:keys [baked-chars baseline
