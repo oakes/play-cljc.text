@@ -48,23 +48,23 @@
            ("else"
              (= outColor (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
-(defn ->font-entity [game bitmap bitmap-width bitmap-height]
-  (-> (e/->image-entity game bitmap bitmap-width bitmap-height)
+(defn ->font-entity [game {:keys [data width height]}]
+  (-> (e/->image-entity game data width height)
       (assoc :vertex font-vertex-shader
              :fragment font-fragment-shader)
       #?(:clj (assoc-in [:uniforms 'u_image :opts]
                         {:mip-level 0
                          :internal-fmt (gl game RED)
-                         :width bitmap-width
-                         :height bitmap-height
+                         :width width
+                         :height height
                          :border 0
                          :src-fmt (gl game RED)
                          :src-type (gl game UNSIGNED_BYTE)}))))
 
 (defn ->text-entity [game
                      {:keys [baked-chars baseline
-                             font-height bitmap-width
-                             bitmap-height first-char]
+                             font-height first-char
+                             bitmap-width bitmap-height]
                       :as baked-font}
                      font-entity
                      text]

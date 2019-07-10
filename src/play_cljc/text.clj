@@ -15,15 +15,17 @@
     (.toByteArray out)))
 
 (defn ->bitmap [bitmap-width bitmap-height]
-  (BufferUtils/createByteBuffer (* bitmap-width bitmap-height)))
+  {:data (BufferUtils/createByteBuffer (* bitmap-width bitmap-height))
+   :width bitmap-width
+   :height bitmap-height})
 
 (def default-first-char 32)
 (def default-char-buffer-size 2048)
 
 (defn ->baked-font
-  ([path font-height bitmap bitmap-width bitmap-height]
-   (->baked-font path font-height bitmap bitmap-width bitmap-height default-first-char default-char-buffer-size))
-  ([path font-height bitmap bitmap-width bitmap-height first-char char-buffer-size]
+  ([path font-height bitmap]
+   (->baked-font path font-height bitmap default-first-char default-char-buffer-size))
+  ([path font-height bitmap first-char char-buffer-size]
    (let [ttf-bytes (cond-> path
                            (string? path)
                            resource->bytes)
@@ -35,7 +37,8 @@
          _ (or (STBTruetype/stbtt_InitFont info ttf)
                (throw (IllegalStateException. "Failed to initialize font information.")))
          cdata (STBTTBakedChar/malloc char-buffer-size)
-         bake-ret (STBTruetype/stbtt_BakeFontBitmap ttf font-height bitmap bitmap-width bitmap-height first-char cdata)
+         {:keys [data width height]} bitmap
+         bake-ret (STBTruetype/stbtt_BakeFontBitmap ttf font-height data width height first-char cdata)
          stack (MemoryStack/stackPush)
          *ascent (.callocInt stack 1)
          *descent (.callocInt stack 1)
@@ -66,11 +69,11 @@
       :chars-that-fit (when (neg? bake-ret)
                         (* -1 bake-ret))
       :font-height font-height
-      :bitmap-width bitmap-width
-      :bitmap-height bitmap-height
-      :first-char first-char})))
+      :first-char first-char
+      :bitmap-width width
+      :bitmap-height height})))
 
-(defn bitmap->data-uri [bitmap width height]
+(defn bitmap->data-uri [{:keys [data width height] :as bitmap}]
   (let [image (promise)]
     (STBImageWrite/stbi_write_png_to_func (reify STBIWriteCallbackI
                                             (invoke [this context data size]
@@ -78,8 +81,7 @@
                                                     arr (byte-array (.remaining buf))]
                                                 (.get buf arr)
                                                 (deliver image arr))))
-                                          0 width height 1 bitmap 0)
-
+                                          0 width height 1 data 0)
     (str "data:image/png;base64,"
          (-> @image base64/encode (String. "UTF-8")))))
 
