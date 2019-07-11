@@ -4,9 +4,11 @@
 
 A library for rendering text in OpenGL or WebGL with [play-cljc](https://github.com/oakes/play-cljc).
 
+### Try the [interactive docs](https://oakes.github.io/play-cljc.text/cljs/play-cljc.gl.text.html) and the [example project](https://github.com/oakes/play-cljc-examples/tree/master/ui-gallery)!
+
 ## Usage
 
-You can include this library in your project dependencies using the version number in the badge above. See [the dynadocs](https://oakes.github.io/play-cljc.text/cljs/play-cljc.gl.text.html) to learn how to use it. Also check out [this example project](https://github.com/oakes/play-cljc-examples/tree/master/ui-gallery).
+You can include this library in your project dependencies using the version number in the badge above.
 
 ## Development
 
