@@ -20,6 +20,6 @@
                               org.lwjgl/lwjgl-stb$natives-linux {:mvn/version "3.2.2"}
                               org.lwjgl/lwjgl-stb$natives-macos {:mvn/version "3.2.2"}
                               org.lwjgl/lwjgl-stb$natives-windows {:mvn/version "3.2.2"}
-                              play-cljc {:mvn/version "RELEASE"}}
+                              play-cljc {:mvn/version "0.3.1"}}
                  :extra-paths ["dev-resources"]}
            :prod {:extra-deps {leiningen {:mvn/version "2.9.0"}}}}}
