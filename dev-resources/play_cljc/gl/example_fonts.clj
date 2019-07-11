@@ -1,6 +1,5 @@
 (ns play-cljc.gl.example-fonts
-  (:require [play-cljc.text :as text]
-            [play-cljc.gl.text :as gl.text]))
+  (:require [play-cljc.text :as text]))
 
 (def bitmap-size 512)
 (def bitmaps {:firacode (text/->bitmap bitmap-size bitmap-size)
