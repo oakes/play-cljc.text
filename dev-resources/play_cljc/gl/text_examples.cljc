@@ -22,8 +22,8 @@
 
 (defexample play-cljc.gl.text/->font-entity
   {:with-card card
-   :with-focus [focus (->> (play-cljc.gl.text/->font-entity game data width height)
-                           (play-cljc.gl.core/compile game))]}
+   :with-focus [focus (play-cljc.gl.core/compile game
+                        (play-cljc.gl.text/->font-entity game data width height))]}
   (let [game (play-cljc.gl.example-utils/init-example card)]
     (play-cljc.gl.text-examples/init game)
     (play-cljc.gl.text-examples/load-roboto
@@ -53,14 +53,14 @@
 
 (defexample play-cljc.gl.text/->text-entity
   {:with-card card
-   :with-focus [focus (->> (play-cljc.gl.text/->text-entity game baked-font font-entity "Hello, world!")
-                           (play-cljc.gl.core/compile game))]}
+   :with-focus [focus (play-cljc.gl.core/compile game
+                        (play-cljc.gl.text/->text-entity game baked-font font-entity "Hello, world!"))]}
   (let [game (play-cljc.gl.example-utils/init-example card)]
     (play-cljc.gl.text-examples/init game)
     (play-cljc.gl.text-examples/load-roboto
       (fn [{:keys [data width height] :as image} baked-font]
-        (let [font-entity (->> (play-cljc.gl.text/->font-entity game data width height)
-                               (play-cljc.gl.core/compile game))
+        (let [font-entity (play-cljc.gl.core/compile game
+                            (play-cljc.gl.text/->font-entity game data width height))
               entity focus]
           (->> game
                (play-cljc.gl.example-utils/game-loop
