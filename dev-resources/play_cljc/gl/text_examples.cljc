@@ -7,14 +7,12 @@
             #?(:clj  [play-cljc.macros-java :refer [gl]]
                :cljs [play-cljc.macros-js :refer-macros [gl]])
             #?(:clj [dynadoc.example :refer [defexample]])
-            #?(:clj [play-cljc.gl.example-fonts :refer [load-bitmap-clj load-font-clj]]))
+            #?(:clj [play-cljc.gl.example-fonts :refer [load-font-clj]]))
   #?(:cljs (:require-macros [dynadoc.example :refer [defexample]]
-                            [play-cljc.gl.example-fonts :refer [load-bitmap-cljs load-font-cljs]])))
+                            [play-cljc.gl.example-fonts :refer [load-font-cljs]])))
 
 (defn load-roboto [callback]
-  (#?(:clj load-bitmap-clj :cljs load-bitmap-cljs) :roboto callback))
-
-(def roboto-font (#?(:clj load-font-clj :cljs load-font-cljs) :roboto))
+  (#?(:clj load-font-clj :cljs load-font-cljs) :roboto callback))
 
 (defn init [game]
   (gl game enable (gl game BLEND))
@@ -29,7 +27,7 @@
   (let [game (play-cljc.gl.example-utils/init-example card)]
     (play-cljc.gl.text-examples/init game)
     (play-cljc.gl.text-examples/load-roboto
-      (fn [{:keys [data width height] :as image}]
+      (fn [{:keys [data width height] :as image} _]
         (let [entity focus]
           (->> game
                (play-cljc.gl.example-utils/game-loop
@@ -55,12 +53,12 @@
 
 (defexample play-cljc.gl.text/->text-entity
   {:with-card card
-   :with-focus [focus (->> (play-cljc.gl.text/->text-entity game play-cljc.gl.text-examples/roboto-font font-entity "Hello, world!")
+   :with-focus [focus (->> (play-cljc.gl.text/->text-entity game baked-font font-entity "Hello, world!")
                            (play-cljc.gl.core/compile game))]}
   (let [game (play-cljc.gl.example-utils/init-example card)]
     (play-cljc.gl.text-examples/init game)
     (play-cljc.gl.text-examples/load-roboto
-      (fn [{:keys [data width height] :as image}]
+      (fn [{:keys [data width height] :as image} baked-font]
         (let [font-entity (->> (play-cljc.gl.text/->font-entity game data width height)
                                (play-cljc.gl.core/compile game))
               entity focus]
