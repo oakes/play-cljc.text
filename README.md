@@ -1,3 +1,5 @@
+[![Clojars Project](https://img.shields.io/clojars/v/play-cljc.text.svg)](https://clojars.org/play-cljc.text)
+
 ## Introduction
 
 A library for rendering text in OpenGL or WebGL with [play-cljc](https://github.com/oakes/play-cljc).
