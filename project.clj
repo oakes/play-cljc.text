@@ -1,4 +1,4 @@
-(defproject play-cljc.text "0.2.0-SNAPSHOT"
+(defproject play-cljc.text "0.2.0"
   :description "A library for rendering text with play-cljc"
   :url "https://github.com/oakes/play-cljc.text"
   :license {:name "Public Domain"
