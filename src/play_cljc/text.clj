@@ -21,8 +21,8 @@
    :width bitmap-width
    :height bitmap-height})
 
-(def default-first-char 32)
-(def default-char-buffer-size 2048)
+(def ^:private default-first-char 32)
+(def ^:private default-char-buffer-size 2048)
 
 (defn ->baked-font
   "Returns a map containing all the info needed to crop letters out of a font atlas."
