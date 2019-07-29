@@ -61,8 +61,21 @@
                          :src-fmt (gl game RED)
                          :src-type (gl game UNSIGNED_BYTE)}))))
 
+(defn- crop-char [font-entity
+                  {:keys [baseline
+                          font-height first-char
+                          bitmap-width bitmap-height]}
+                  baked-char
+                  flip-y?]
+  (let [{:keys [x y w h xoff yoff]} baked-char]
+    (-> font-entity
+        (t/project bitmap-width bitmap-height)
+        (t/crop x y w h)
+        (t/translate xoff (if flip-y? (- font-height baseline yoff) (+ baseline yoff)))
+        (t/scale w h))))
+
 (defn ->text-entity [game
-                     {:keys [baked-chars baseline
+                     {:keys [baked-chars
                              font-height first-char
                              bitmap-width bitmap-height]
                       :as baked-font}
@@ -72,15 +85,12 @@
          total 0
          inner-entities []]
     (if-let [ch (first text)]
-      (let [{:keys [x y w h xoff yoff xadv]} (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))]
+      (let [baked-char (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))]
         (recur (rest text)
-               (+ total xadv)
+               (+ total (:xadv baked-char))
                (conj inner-entities
                      (-> font-entity
-                         (t/project bitmap-width bitmap-height)
-                         (t/crop x y w h)
-                         (t/translate (+ total xoff) (- font-height baseline yoff))
-                         (t/scale w h)
+                         (crop-char baked-font (update baked-char :xoff + total) true)
                          (update-in [:uniforms 'u_matrix]
                                     #(m/multiply-matrices 3 flip-y-matrix %))))))
       (-> (e/->image-entity game nil total font-height)
