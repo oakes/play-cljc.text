@@ -1,5 +1,3 @@
-[![Clojars Project](https://img.shields.io/clojars/v/play-cljc.text.svg)](https://clojars.org/play-cljc.text)
-
 ## Introduction
 
 A library for rendering text in OpenGL or WebGL with [play-cljc](https://github.com/oakes/play-cljc).
@@ -8,7 +6,7 @@ A library for rendering text in OpenGL or WebGL with [play-cljc](https://github.
 
 ## Usage
 
-You can include this library in your project dependencies using the version number in the badge above.
+If you're using the latest version of play-cljc, it brings this library in automatically.
 
 ## Development
 
