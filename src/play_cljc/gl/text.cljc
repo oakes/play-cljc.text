@@ -17,9 +17,9 @@
    '{a_position vec2}
    :uniforms
    '{u_matrix mat3
-     u_textureMatrix mat3}
+     u_texture_matrix mat3}
    :outputs
-   '{v_texCoord vec2}
+   '{v_tex_coord vec2}
    :signatures
    '{main ([] void)}
    :functions
@@ -28,25 +28,25 @@
               (vec4
                 (.xy (* u_matrix (vec3 a_position 1)))
                 0 1))
-           (= v_texCoord (.xy (* u_textureMatrix (vec3 a_position 1)))))}})
+           (= v_tex_coord (.xy (* u_texture_matrix (vec3 a_position 1)))))}})
 
 (def ^:private font-fragment-shader
   {:precision "mediump float"
    :uniforms
    '{u_image sampler2D}
    :inputs
-   '{v_texCoord vec2}
+   '{v_tex_coord vec2}
    :outputs
-   '{outColor vec4}
+   '{o_color vec4}
    :signatures
    '{main ([] void)}
    :functions
    '{main ([]
-           (= outColor (texture u_image v_texCoord))
-           ("if" (== (.rgb outColor) (vec3 "0.0" "0.0" "0.0"))
+           (= o_color (texture u_image v_tex_coord))
+           ("if" (== (.rgb o_color) (vec3 "0.0" "0.0" "0.0"))
              "discard")
            ("else"
-             (= outColor (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
+             (= o_color (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
 (defn ->font-entity [game data width height]
   (-> (e/->image-entity game data width height)
