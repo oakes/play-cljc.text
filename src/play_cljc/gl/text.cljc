@@ -157,14 +157,16 @@
                  bitmap-width bitmap-height]} baked-font
          char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
          baked-char (nth baked-chars char-code)
-         {:keys [x y w h xoff yoff]} baked-char
+         {:keys [x y w h xoff yoff xadv]} baked-char
          line (or (get characters line-num) [])
          prev-chars (subvec line 0 index)
-         x-total (reduce + 0 (map :xadv prev-chars))
+         prev-xadv (reduce + 0 (map :xadv prev-chars))
+         x-total (+ xadv prev-xadv)
          y-total (* line-num font-height)
          prev-lines (subvec characters 0 line-num)
          prev-count (reduce + 0 (map count prev-lines))
-         line (assoc line index (assoc baked-char :ch ch))
+         replaced-char (get line index)
+         line (assoc line index (assoc baked-char :ch ch :x-total x-total))
          next-char (get line (inc index))]
      (-> text-entity
          (assoc-in [:characters line-num] line)
@@ -174,8 +176,9 @@
                       (assoc-in [:uniforms 'u_scale_matrix]
                                 (m/scaling-matrix w h))
                       (assoc-in [:uniforms 'u_translate_matrix]
-                                (m/translation-matrix (+ xoff x-total) (+ baseline yoff y-total)))))
-         (cond-> next-char
+                                (m/translation-matrix (+ xoff prev-xadv) (+ baseline yoff y-total)))))
+         ;; adjust the next char if its horizontal position changed
+         (cond-> (and next-char (not= (:x-total replaced-char) x-total))
                  (assoc-char line-num (inc index) (:ch next-char)))))))
 
 (defn ->text-entity
