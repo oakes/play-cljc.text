@@ -91,7 +91,7 @@
     a_texture_matrix u_texture_matrix
     a_color u_color})
 
-(defrecord InstancedFontEntity [font-entity baked-font characters])
+(defrecord InstancedFontEntity [baked-font characters])
 
 (extend-type InstancedFontEntity
   t/IProject
@@ -155,7 +155,7 @@
            ("else"
              (= o_color u_color)))}})
 
-(defrecord FontEntity [width height])
+(defrecord FontEntity [width height baked-font])
 
 (extend-type FontEntity
   t/IProject
@@ -178,55 +178,76 @@
             (m/multiply-matrices 3
               (m/translation-matrix (/ crop-x width) (/ crop-y height)))
             (m/multiply-matrices 3
-              (m/scaling-matrix (/ crop-width width) (/ crop-height height)))))))
+              (m/scaling-matrix (/ crop-width width) (/ crop-height height))))))
+  i/IInstance
+  (->instanced-entity [entity]
+    (-> entity
+        (assoc :vertex instanced-font-vertex-shader
+               :fragment instanced-font-fragment-shader
+               :characters [])
+        (update :uniforms dissoc 'u_matrix 'u_texture_matrix 'u_color)
+        (update :uniforms merge {'u_matrix (m/identity-matrix 3)})
+        (update :attributes merge {'a_translate_matrix {:data [] :divisor 1}
+                                   'a_scale_matrix {:data [] :divisor 1}
+                                   'a_texture_matrix {:data [] :divisor 1}
+                                   'a_color {:data [] :divisor 1}})
+        map->InstancedFontEntity)))
 
-(defn ->font-entity [game data width height]
-  (-> (e/->image-entity game data width height)
-      (assoc :vertex font-vertex-shader
-             :fragment font-fragment-shader)
-      (assoc-in [:uniforms 'u_color] [0 0 0 1])
-      #?(:clj (assoc-in [:uniforms 'u_image :opts]
-                        {:mip-level 0
-                         :internal-fmt (gl game RED)
-                         :width width
-                         :height height
-                         :border 0
-                         :src-fmt (gl game RED)
-                         :src-type (gl game UNSIGNED_BYTE)}))
-      map->FontEntity))
+(defn ->font-entity
+  ([game data width height]
+   (-> (e/->image-entity game data width height)
+       (assoc :vertex font-vertex-shader
+              :fragment font-fragment-shader)
+       (assoc-in [:uniforms 'u_color] [0 0 0 1])
+       #?(:clj (assoc-in [:uniforms 'u_image :opts]
+                         {:mip-level 0
+                          :internal-fmt (gl game RED)
+                          :width width
+                          :height height
+                          :border 0
+                          :src-fmt (gl game RED)
+                          :src-type (gl game UNSIGNED_BYTE)}))))
+  ([game data width height baked-font]
+   (-> (->font-entity game data width height)
+       (assoc :baked-font baked-font)
+       map->FontEntity)))
+
+(defn crop-char [{:keys [baked-font] :as font-entity} ch]
+  (let [{:keys [baked-chars baseline first-char]} baked-font
+        char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
+        baked-char (nth baked-chars char-code)
+        {:keys [x y w h xoff yoff]} baked-char]
+    (-> font-entity
+        (t/crop x y w h)
+        (assoc-in [:uniforms 'u_scale_matrix]
+                  (m/scaling-matrix w h))
+        (assoc-in [:uniforms 'u_translate_matrix]
+                  (m/translation-matrix xoff (+ baseline yoff)))
+        (assoc :baked-char baked-char))))
 
 (defn assoc-char
-  ([text-entity index ch]
-   (assoc-char text-entity 0 index ch))
-  ([{:keys [font-entity baked-font characters] :as text-entity} line-num index ch]
-   (let [{:keys [baked-chars baseline
-                 font-height first-char
-                 bitmap-width bitmap-height]} baked-font
-         char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
-         baked-char (nth baked-chars char-code)
-         {:keys [x y w h xoff yoff xadv]} baked-char
-         line (or (get characters line-num) [])
+  ([text-entity index char-entity]
+   (assoc-char text-entity 0 index char-entity))
+  ([{:keys [baked-font characters] :as text-entity} line-num index {:keys [baked-char] :as char-entity}]
+   (let [line (or (get characters line-num) [])
          prev-chars (subvec line 0 index)
-         prev-xadv (reduce + 0 (map :xadv prev-chars))
-         x-total (+ xadv prev-xadv)
-         y-total (* line-num font-height)
+         prev-xadv (reduce + 0 (map #(-> % :baked-char :xadv) prev-chars))
+         x-total (+ (:xadv baked-char) prev-xadv)
+         y-total (* line-num (:font-height baked-font))
          prev-lines (subvec characters 0 line-num)
          prev-count (reduce + 0 (map count prev-lines))
          replaced-char (get line index)
-         line (assoc line index (assoc baked-char :ch ch :x-total x-total))
+         line (assoc line index (assoc char-entity :x-total x-total))
          next-char (get line (inc index))]
      (-> text-entity
          (assoc-in [:characters line-num] line)
          (i/assoc (+ index prev-count)
-                  (-> font-entity
-                      (t/crop x y w h)
-                      (assoc-in [:uniforms 'u_scale_matrix]
-                                (m/scaling-matrix w h))
-                      (assoc-in [:uniforms 'u_translate_matrix]
-                                (m/translation-matrix (+ xoff prev-xadv) (+ baseline yoff y-total)))))
+                  (-> char-entity
+                      (update-in [:uniforms 'u_translate_matrix]
+                        #(m/multiply-matrices 3 (m/translation-matrix prev-xadv y-total) %))))
          ;; adjust the next char if its horizontal position changed
          (cond-> (and next-char (not= (:x-total replaced-char) x-total))
-                 (assoc-char line-num (inc index) (:ch next-char)))))))
+                 (assoc-char line-num (inc index) next-char))))))
 
 (defn dissoc-char
   ([text-entity index]
@@ -243,52 +264,39 @@
          (assoc-in [:characters line-num] line)
          (i/dissoc (+ index prev-count))
          (cond-> next-char
-                 (assoc-char line-num index (:ch next-char)))))))
+                 (assoc-char line-num index next-char))))))
 
 (defn ->text-entity
-  ([game baked-font font-entity]
-   (-> font-entity
-       (assoc :vertex instanced-font-vertex-shader
-              :fragment instanced-font-fragment-shader
-              :baked-font baked-font
-              :font-entity font-entity
-              :characters [])
-       (update :uniforms dissoc 'u_matrix 'u_texture_matrix 'u_color)
-       (update :uniforms merge {'u_matrix (m/identity-matrix 3)})
-       (update :attributes merge {'a_translate_matrix {:data [] :divisor 1}
-                                  'a_scale_matrix {:data [] :divisor 1}
-                                  'a_texture_matrix {:data [] :divisor 1}
-                                  'a_color {:data [] :divisor 1}})
-       map->InstancedFontEntity))
-  ([game
-    {:keys [baked-chars baseline
+ ([game baked-font image-entity text]
+  (->text-entity game (assoc image-entity :baked-font baked-font) text))
+ ([game
+   {{:keys [baked-chars baseline
             font-height first-char
-            bitmap-width bitmap-height]
-     :as baked-font}
-    font-entity
-    text]
-   (loop [text (seq text)
-          total 0
-          inner-entities []]
-     (if-let [ch (first text)]
-       (let [{:keys [x y w h xoff yoff xadv]} (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))]
-         (recur (rest text)
-                (+ total xadv)
-                (conj inner-entities
-                      (-> font-entity
-                          (t/project bitmap-width bitmap-height)
-                          (t/crop x y w h)
-                          (t/translate (+ xoff total) (- font-height baseline yoff))
-                          (t/scale w h)
-                          (update-in [:uniforms 'u_matrix]
-                                     #(m/multiply-matrices 3 flip-y-matrix %))))))
-       (-> (e/->image-entity game nil total font-height)
-           (assoc
-             :width total
-             :height font-height
-             :render-to-texture {'u_image (mapv #(assoc % :viewport {:x 0
-                                                                     :y (- font-height bitmap-height)
-                                                                     :width bitmap-width
-                                                                     :height bitmap-height})
-                                                inner-entities)}))))))
+            bitmap-width bitmap-height]} :baked-font
+    :as font-entity}
+   text]
+  (loop [text (seq text)
+         total 0
+         inner-entities []]
+    (if-let [ch (first text)]
+      (let [{:keys [x y w h xoff yoff xadv]} (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))]
+        (recur (rest text)
+               (+ total xadv)
+               (conj inner-entities
+                     (-> font-entity
+                         (t/project bitmap-width bitmap-height)
+                         (t/crop x y w h)
+                         (t/translate (+ xoff total) (- font-height baseline yoff))
+                         (t/scale w h)
+                         (update-in [:uniforms 'u_matrix]
+                                    #(m/multiply-matrices 3 flip-y-matrix %))))))
+      (-> (e/->image-entity game nil total font-height)
+          (assoc
+            :width total
+            :height font-height
+            :render-to-texture {'u_image (mapv #(assoc % :viewport {:x 0
+                                                                    :y (- font-height bitmap-height)
+                                                                    :width bitmap-width
+                                                                    :height bitmap-height})
+                                               inner-entities)}))))))
 
