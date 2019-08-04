@@ -43,13 +43,15 @@
 (def ^:private instanced-font-vertex-shader
   {:inputs
    '{a_position vec2
+     a_color vec4
      a_translate_matrix mat3
      a_texture_matrix mat3
      a_scale_matrix mat3}
    :uniforms
    '{u_matrix mat3}
    :outputs
-   '{v_tex_coord vec2}
+   '{v_tex_coord vec2
+     v_color vec4}
    :signatures
    '{main ([] void)}
    :functions
@@ -61,14 +63,16 @@
                         a_scale_matrix
                         (vec3 a_position 1)))
                 0 1))
-           (= v_tex_coord (.xy (* a_texture_matrix (vec3 a_position 1)))))}})
+           (= v_tex_coord (.xy (* a_texture_matrix (vec3 a_position 1))))
+           (= v_color a_color))}})
 
 (def ^:private instanced-font-fragment-shader
   {:precision "mediump float"
    :uniforms
    '{u_image sampler2D}
    :inputs
-   '{v_tex_coord vec2}
+   '{v_tex_coord vec2
+     v_color vec4}
    :outputs
    '{o_color vec4}
    :signatures
@@ -79,12 +83,13 @@
            ("if" (== (.rgb o_color) (vec3 "0.0" "0.0" "0.0"))
              "discard")
            ("else"
-             (= o_color (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
+             (= o_color v_color)))}})
 
 (def ^:private instanced-font-attrs->unis
   '{a_translate_matrix u_translate_matrix
     a_scale_matrix u_scale_matrix
-    a_texture_matrix u_texture_matrix})
+    a_texture_matrix u_texture_matrix
+    a_color u_color})
 
 (defrecord InstancedFontEntity [font-entity baked-font characters])
 
@@ -134,7 +139,8 @@
 (def ^:private font-fragment-shader
   {:precision "mediump float"
    :uniforms
-   '{u_image sampler2D}
+   '{u_image sampler2D
+     u_color vec4}
    :inputs
    '{v_tex_coord vec2}
    :outputs
@@ -147,7 +153,7 @@
            ("if" (== (.rgb o_color) (vec3 "0.0" "0.0" "0.0"))
              "discard")
            ("else"
-             (= o_color (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
+             (= o_color u_color)))}})
 
 (defrecord FontEntity [width height])
 
@@ -162,6 +168,9 @@
   (rotate [entity angle] (rotate entity angle))
   t/ICamera
   (camera [entity cam] (camera entity cam))
+  t/IColor
+  (color [entity rgba]
+    (assoc-in entity [:uniforms 'u_color] rgba))
   t/ICrop
   (crop [{:keys [width height] :as entity} crop-x crop-y crop-width crop-height]
     (update-in entity [:uniforms 'u_texture_matrix]
@@ -175,6 +184,7 @@
   (-> (e/->image-entity game data width height)
       (assoc :vertex font-vertex-shader
              :fragment font-fragment-shader)
+      (assoc-in [:uniforms 'u_color] [0 0 0 1])
       #?(:clj (assoc-in [:uniforms 'u_image :opts]
                         {:mip-level 0
                          :internal-fmt (gl game RED)
@@ -243,11 +253,12 @@
               :baked-font baked-font
               :font-entity font-entity
               :characters [])
-       (update :uniforms dissoc 'u_matrix 'u_texture_matrix)
+       (update :uniforms dissoc 'u_matrix 'u_texture_matrix 'u_color)
        (update :uniforms merge {'u_matrix (m/identity-matrix 3)})
        (update :attributes merge {'a_translate_matrix {:data [] :divisor 1}
                                   'a_scale_matrix {:data [] :divisor 1}
-                                  'a_texture_matrix {:data [] :divisor 1}})
+                                  'a_texture_matrix {:data [] :divisor 1}
+                                  'a_color {:data [] :divisor 1}})
        map->InstancedFontEntity))
   ([game
     {:keys [baked-chars baseline
