@@ -194,6 +194,10 @@
         map->InstancedFontEntity)))
 
 (defn ->font-entity
+  ([game data width height baked-font]
+   (-> (->font-entity game data width height)
+       (assoc :baked-font baked-font)
+       map->FontEntity))
   ([game data width height]
    (-> (e/->image-entity game data width height)
        (assoc :vertex font-vertex-shader
@@ -206,11 +210,7 @@
                           :height height
                           :border 0
                           :src-fmt (gl game RED)
-                          :src-type (gl game UNSIGNED_BYTE)}))))
-  ([game data width height baked-font]
-   (-> (->font-entity game data width height)
-       (assoc :baked-font baked-font)
-       map->FontEntity)))
+                          :src-type (gl game UNSIGNED_BYTE)})))))
 
 (defn crop-char [{:keys [baked-font] :as font-entity} ch]
   (let [{:keys [baked-chars baseline first-char]} baked-font
@@ -267,8 +267,6 @@
                  (assoc-char line-num index next-char))))))
 
 (defn ->text-entity
- ([game baked-font image-entity text]
-  (->text-entity game (assoc image-entity :baked-font baked-font) text))
  ([game
    {{:keys [baked-chars baseline
             font-height first-char
@@ -298,5 +296,7 @@
                                                                     :y (- font-height bitmap-height)
                                                                     :width bitmap-width
                                                                     :height bitmap-height})
-                                               inner-entities)}))))))
+                                               inner-entities)})))))
+ ([game baked-font image-entity text]
+  (->text-entity game (assoc image-entity :baked-font baked-font) text)))
 
