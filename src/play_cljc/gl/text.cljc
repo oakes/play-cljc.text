@@ -155,24 +155,28 @@
    (let [{:keys [baked-chars baseline
                  font-height first-char
                  bitmap-width bitmap-height]} baked-font
-         baked-char (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))
+         char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
+         baked-char (nth baked-chars char-code)
          {:keys [x y w h xoff yoff]} baked-char
          line (or (get characters line-num) [])
          prev-chars (subvec line 0 index)
          x-total (reduce + 0 (map :xadv prev-chars))
          y-total (* line-num font-height)
          prev-lines (subvec characters 0 line-num)
-         prev-count (reduce + 0 (map count prev-lines))]
+         prev-count (reduce + 0 (map count prev-lines))
+         line (assoc line index (assoc baked-char :ch ch))
+         next-char (get line (inc index))]
      (-> text-entity
-         (assoc-in [:characters line-num]
-                   (assoc line index baked-char))
+         (assoc-in [:characters line-num] line)
          (i/assoc (+ index prev-count)
                   (-> font-entity
                       (t/crop x y w h)
                       (assoc-in [:uniforms 'u_scale_matrix]
                                 (m/scaling-matrix w h))
                       (assoc-in [:uniforms 'u_translate_matrix]
-                                (m/translation-matrix (+ xoff x-total) (+ baseline yoff y-total)))))))))
+                                (m/translation-matrix (+ xoff x-total) (+ baseline yoff y-total)))))
+         (cond-> next-char
+                 (assoc-char line-num (inc index) (:ch next-char)))))))
 
 (defn ->text-entity
   ([game baked-font font-entity]
