@@ -11,10 +11,34 @@
 
 (def ^:private ^:const reverse-matrix (m/scaling-matrix -1 -1))
 
+(defn- project [entity width height]
+  (update-in entity [:uniforms 'u_matrix]
+    #(m/multiply-matrices 3 (m/projection-matrix width height) %)))
+
+(defn- translate [entity x y]
+  (update-in entity [:uniforms 'u_matrix]
+    #(m/multiply-matrices 3 (m/translation-matrix x y) %)))
+
+(defn- scale [entity x y]
+  (update-in entity [:uniforms 'u_matrix]
+    #(m/multiply-matrices 3 (m/scaling-matrix x y) %)))
+
+(defn- rotate [entity angle]
+  (update-in entity [:uniforms 'u_matrix]
+    #(m/multiply-matrices 3 (m/rotation-matrix angle) %)))
+
+(defn- camera [entity {:keys [matrix]}]
+  (update-in entity [:uniforms 'u_matrix]
+    #(->> %
+          (m/multiply-matrices 3 matrix)
+          (m/multiply-matrices 3 reverse-matrix))))
+
 (def ^:private flip-y-matrix
   [1  0  0
    0 -1  0
    0  0  1])
+
+;; InstancedFontEntity
 
 (def ^:private instanced-font-vertex-shader
   {:inputs
@@ -66,27 +90,15 @@
 
 (extend-type InstancedFontEntity
   t/IProject
-  (project [entity width height]
-    (update-in entity [:uniforms 'u_matrix]
-      #(m/multiply-matrices 3 (m/projection-matrix width height) %)))
+  (project [entity width height] (project entity width height))
   t/ITranslate
-  (translate [entity x y]
-    (update-in entity [:uniforms 'u_matrix]
-      #(m/multiply-matrices 3 (m/translation-matrix x y) %)))
+  (translate [entity x y] (translate entity x y))
   t/IScale
-  (scale [entity x y]
-    (update-in entity [:uniforms 'u_matrix]
-      #(m/multiply-matrices 3 (m/scaling-matrix x y) %)))
+  (scale [entity x y] (scale entity x y))
   t/IRotate
-  (rotate [entity angle]
-    (update-in entity [:uniforms 'u_matrix]
-      #(m/multiply-matrices 3 (m/rotation-matrix angle) %)))
+  (rotate [entity angle] (rotate entity angle))
   t/ICamera
-  (camera [entity {:keys [matrix]}]
-    (update-in entity [:uniforms 'u_matrix]
-      #(->> %
-            (m/multiply-matrices 3 matrix)
-            (m/multiply-matrices 3 reverse-matrix))))
+  (camera [entity cam] (camera entity cam))
   i/IInstanced
   (assoc [instanced-entity i entity]
     (reduce-kv
@@ -98,6 +110,8 @@
       (partial u/dissoc-instance-attr i)
       instanced-entity
       instanced-font-attrs->unis)))
+
+;; FontEntity
 
 (def ^:private font-vertex-shader
   {:inputs
@@ -135,6 +149,28 @@
            ("else"
              (= o_color (vec4 "0.0" "0.0" "0.0" "1.0"))))}})
 
+(defrecord FontEntity [width height])
+
+(extend-type FontEntity
+  t/IProject
+  (project [entity width height] (project entity width height))
+  t/ITranslate
+  (translate [entity x y] (translate entity x y))
+  t/IScale
+  (scale [entity x y] (scale entity x y))
+  t/IRotate
+  (rotate [entity angle] (rotate entity angle))
+  t/ICamera
+  (camera [entity cam] (camera entity cam))
+  t/ICrop
+  (crop [{:keys [width height] :as entity} crop-x crop-y crop-width crop-height]
+    (update-in entity [:uniforms 'u_texture_matrix]
+      #(->> %
+            (m/multiply-matrices 3
+              (m/translation-matrix (/ crop-x width) (/ crop-y height)))
+            (m/multiply-matrices 3
+              (m/scaling-matrix (/ crop-width width) (/ crop-height height)))))))
+
 (defn ->font-entity [game data width height]
   (-> (e/->image-entity game data width height)
       (assoc :vertex font-vertex-shader
@@ -146,7 +182,8 @@
                          :height height
                          :border 0
                          :src-fmt (gl game RED)
-                         :src-type (gl game UNSIGNED_BYTE)}))))
+                         :src-type (gl game UNSIGNED_BYTE)}))
+      map->FontEntity))
 
 (defn assoc-char
   ([text-entity index ch]
