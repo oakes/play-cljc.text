@@ -194,8 +194,8 @@
         map->InstancedFontEntity)))
 
 (defn ->font-entity
-  ([game data width height baked-font]
-   (-> (->font-entity game data width height)
+  ([game data baked-font]
+   (-> (->font-entity game data (:bitmap-width baked-font) (:bitmap-height baked-font))
        (assoc :baked-font baked-font)
        map->FontEntity))
   ([game data width height]
