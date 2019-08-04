@@ -69,10 +69,18 @@
   (project [entity width height]
     (update-in entity [:uniforms 'u_matrix]
       #(m/multiply-matrices 3 (m/projection-matrix width height) %)))
+  t/ITranslate
+  (translate [entity x y]
+    (update-in entity [:uniforms 'u_matrix]
+      #(m/multiply-matrices 3 (m/translation-matrix x y) %)))
   t/IScale
   (scale [entity x y]
     (update-in entity [:uniforms 'u_matrix]
       #(m/multiply-matrices 3 (m/scaling-matrix x y) %)))
+  t/IRotate
+  (rotate [entity angle]
+    (update-in entity [:uniforms 'u_matrix]
+      #(m/multiply-matrices 3 (m/rotation-matrix angle) %)))
   t/ICamera
   (camera [entity {:keys [matrix]}]
     (update-in entity [:uniforms 'u_matrix]
