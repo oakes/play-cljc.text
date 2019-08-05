@@ -186,8 +186,6 @@
               (m/scaling-matrix (/ crop-width width) (/ crop-height height))))))
   i/IInstance
   (->instanced-entity [entity]
-    (when (:program entity)
-      (throw (ex-info "Only uncompiled entities can be passed to ->instanced-entity" {})))
     (-> entity
         (assoc :vertex instanced-font-vertex-shader
                :fragment instanced-font-fragment-shader
