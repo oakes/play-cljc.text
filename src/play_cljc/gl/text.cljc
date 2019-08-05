@@ -186,6 +186,8 @@
               (m/scaling-matrix (/ crop-width width) (/ crop-height height))))))
   i/IInstance
   (->instanced-entity [entity]
+    (when (:program entity)
+      (throw (ex-info "Only uncompiled entities can be passed to ->instanced-entity" {})))
     (-> entity
         (assoc :vertex instanced-font-vertex-shader
                :fragment instanced-font-fragment-shader
@@ -232,6 +234,8 @@
             bitmap-width bitmap-height]} :baked-font
     :as font-entity}
    text]
+  (when-not (:program font-entity)
+    (throw (ex-info "Only compiled font entities can be passed to ->text-entity" {})))
   (loop [text (seq text)
          total 0
          inner-entities []]
