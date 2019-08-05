@@ -230,7 +230,7 @@
   (color [entity rgba]
     (assoc-in entity [:uniforms 'u_color] rgba)))
 
-(defn ->char-entity [{:keys [baked-font] :as font-entity} ch]
+(defn ->char-entity [game {:keys [baked-font] :as font-entity} ch]
   (let [{:keys [baked-chars baseline first-char]} baked-font
         char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
         baked-char (nth baked-chars char-code)

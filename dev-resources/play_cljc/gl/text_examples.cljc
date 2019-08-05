@@ -81,7 +81,7 @@
   {:with-card card
    :with-focus [focus (reduce-kv
                         (fn [entity i ch]
-                          (play-cljc.gl.text/assoc-char entity i (play-cljc.gl.text/->char-entity font-entity ch)))
+                          (play-cljc.gl.text/assoc-char entity i (play-cljc.gl.text/->char-entity game font-entity ch)))
                         instanced-entity
                         (vec (str (swap! counter inc))))]}
   (let [game (play-cljc.gl.example-utils/init-example card)]
