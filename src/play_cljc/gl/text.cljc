@@ -221,16 +221,7 @@
                           :src-fmt (gl game RED)
                           :src-type (gl game UNSIGNED_BYTE)})))))
 
-;; CharEntity
-
-(defrecord CharEntity [baked-char])
-
-(extend-type CharEntity
-  t/IColor
-  (color [entity rgba]
-    (assoc-in entity [:uniforms 'u_color] rgba)))
-
-(defn ->char-entity [game {:keys [baked-font] :as font-entity} ch]
+(defn crop-char [{:keys [baked-font] :as font-entity} ch]
   (let [{:keys [baked-chars baseline first-char]} baked-font
         char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
         baked-char (nth baked-chars char-code)
@@ -241,8 +232,7 @@
                   (m/scaling-matrix w h))
         (assoc-in [:uniforms 'u_translate_matrix]
                   (m/translation-matrix xoff (+ baseline yoff)))
-        (assoc :baked-char baked-char)
-        map->CharEntity)))
+        (assoc :baked-char baked-char))))
 
 (defn assoc-char
   ([text-entity index char-entity]
