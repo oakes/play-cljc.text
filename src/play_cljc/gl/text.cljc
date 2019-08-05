@@ -123,6 +123,8 @@
    '{a_position vec2}
    :uniforms
    '{u_matrix mat3
+     u_translate_matrix mat3
+     u_scale_matrix mat3
      u_texture_matrix mat3}
    :outputs
    '{v_tex_coord vec2}
@@ -132,7 +134,10 @@
    '{main ([]
            (= gl_Position
               (vec4
-                (.xy (* u_matrix (vec3 a_position 1)))
+                (.xy (* u_matrix
+                        u_translate_matrix
+                        u_scale_matrix
+                        (vec3 a_position 1)))
                 0 1))
            (= v_tex_coord (.xy (* u_texture_matrix (vec3 a_position 1)))))}})
 
@@ -185,7 +190,9 @@
         (assoc :vertex instanced-font-vertex-shader
                :fragment instanced-font-fragment-shader
                :characters [])
-        (update :uniforms dissoc 'u_matrix 'u_texture_matrix 'u_color)
+        (update :uniforms dissoc
+                'u_matrix 'u_texture_matrix 'u_color
+                'u_scale_matrix 'u_translate_matrix)
         (update :uniforms merge {'u_matrix (m/identity-matrix 3)})
         (update :attributes merge {'a_translate_matrix {:data [] :divisor 1}
                                    'a_scale_matrix {:data [] :divisor 1}
@@ -202,7 +209,9 @@
    (-> (e/->image-entity game data width height)
        (assoc :vertex font-vertex-shader
               :fragment font-fragment-shader)
-       (assoc-in [:uniforms 'u_color] [0 0 0 1])
+       (update :uniforms merge {'u_color [0 0 0 1]
+                                'u_scale_matrix (m/identity-matrix 3)
+                                'u_translate_matrix (m/identity-matrix 3)})
        #?(:clj (assoc-in [:uniforms 'u_image :opts]
                          {:mip-level 0
                           :internal-fmt (gl game RED)
@@ -213,29 +222,6 @@
                           :src-type (gl game UNSIGNED_BYTE)})))))
 
 ;; CharEntity
-
-(def ^:private char-vertex-shader
-  {:inputs
-   '{a_position vec2}
-   :uniforms
-   '{u_matrix mat3
-     u_translate_matrix mat3
-     u_scale_matrix mat3
-     u_texture_matrix mat3}
-   :outputs
-   '{v_tex_coord vec2}
-   :signatures
-   '{main ([] void)}
-   :functions
-   '{main ([]
-           (= gl_Position
-              (vec4
-                (.xy (* u_matrix
-                        u_translate_matrix
-                        u_scale_matrix
-                        (vec3 a_position 1)))
-                0 1))
-           (= v_tex_coord (.xy (* u_texture_matrix (vec3 a_position 1)))))}})
 
 (defrecord CharEntity [baked-char])
 
@@ -250,7 +236,6 @@
         baked-char (nth baked-chars char-code)
         {:keys [x y w h xoff yoff]} baked-char]
     (-> font-entity
-        (assoc :vertex char-vertex-shader)
         (t/crop x y w h)
         (assoc-in [:uniforms 'u_scale_matrix]
                   (m/scaling-matrix w h))
