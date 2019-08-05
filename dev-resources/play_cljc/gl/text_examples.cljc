@@ -22,13 +22,12 @@
 
 (defexample play-cljc.gl.text/->font-entity
   {:with-card card
-   :with-focus [focus (play-cljc.gl.core/compile game
-                        (play-cljc.gl.text/->font-entity game data width height))]}
+   :with-focus [focus (play-cljc.gl.text/->font-entity game data baked-font)]}
   (let [game (play-cljc.gl.example-utils/init-example card)]
     (play-cljc.gl.text-examples/init game)
     (play-cljc.gl.text-examples/load-roboto
-      (fn [{:keys [data width height] :as image} _]
-        (let [entity focus]
+      (fn [{:keys [data] :as image} baked-font]
+        (let [entity (play-cljc.gl.core/compile game focus)]
           (->> game
                (play-cljc.gl.example-utils/game-loop
                  (fn font-entity-render [game]
