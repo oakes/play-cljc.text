@@ -201,6 +201,8 @@
         map->InstancedFontEntity)))
 
 (defn ->font-entity
+  "Returns an entity with all characters in the font. The second arity is for backwards
+  compatibility and should not be used."
   ([game data baked-font]
    (-> (->font-entity game data (:bitmap-width baked-font) (:bitmap-height baked-font))
        (assoc :baked-font baked-font)
@@ -222,6 +224,8 @@
                           :src-type (gl game UNSIGNED_BYTE)})))))
 
 (defn ->text-entity
+  "Returns an entity with the given text rendered to it. The second arity is for backwards
+  compatibility and should not be used."
  ([game
    {{:keys [baked-chars baseline
             font-height first-char
