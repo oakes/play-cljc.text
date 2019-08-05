@@ -11,9 +11,8 @@ If you're using the latest version of play-cljc, it brings this library in autom
 ## Development
 
 * Install [the Clojure CLI tool](https://clojure.org/guides/getting_started#_clojure_installer_and_cli_tools)
-* To develop the web version with figwheel: `clj -A:dev`
-* To develop the native version: `clj -A:dev native`
-  * On Mac OS, you will need to run `clj -A:dev -J-XstartOnFirstThread native`
+* To develop the native version: `clj -A:dev`
+  * On Mac OS, you will need to run `clj -A:dev -J-XstartOnFirstThread`
 * To install the release version: `clj -A:prod install`
 
 ## Licensing
