@@ -212,18 +212,52 @@
                           :src-fmt (gl game RED)
                           :src-type (gl game UNSIGNED_BYTE)})))))
 
-(defn crop-char [{:keys [baked-font] :as font-entity} ch]
+;; CharEntity
+
+(def ^:private char-vertex-shader
+  {:inputs
+   '{a_position vec2}
+   :uniforms
+   '{u_matrix mat3
+     u_translate_matrix mat3
+     u_scale_matrix mat3
+     u_texture_matrix mat3}
+   :outputs
+   '{v_tex_coord vec2}
+   :signatures
+   '{main ([] void)}
+   :functions
+   '{main ([]
+           (= gl_Position
+              (vec4
+                (.xy (* u_matrix
+                        u_translate_matrix
+                        u_scale_matrix
+                        (vec3 a_position 1)))
+                0 1))
+           (= v_tex_coord (.xy (* u_texture_matrix (vec3 a_position 1)))))}})
+
+(defrecord CharEntity [baked-char])
+
+(extend-type CharEntity
+  t/IColor
+  (color [entity rgba]
+    (assoc-in entity [:uniforms 'u_color] rgba)))
+
+(defn ->char-entity [{:keys [baked-font] :as font-entity} ch]
   (let [{:keys [baked-chars baseline first-char]} baked-font
         char-code (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char)
         baked-char (nth baked-chars char-code)
         {:keys [x y w h xoff yoff]} baked-char]
     (-> font-entity
+        (assoc :vertex char-vertex-shader)
         (t/crop x y w h)
         (assoc-in [:uniforms 'u_scale_matrix]
                   (m/scaling-matrix w h))
         (assoc-in [:uniforms 'u_translate_matrix]
                   (m/translation-matrix xoff (+ baseline yoff)))
-        (assoc :baked-char baked-char))))
+        (assoc :baked-char baked-char)
+        map->CharEntity)))
 
 (defn assoc-char
   ([text-entity index char-entity]
