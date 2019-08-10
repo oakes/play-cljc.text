@@ -38,6 +38,34 @@
    0 -1  0
    0  0  1])
 
+(defn- replace-instance-attr [start-index end-index entities instanced-entity attr-name uni-name]
+  (let [new-data (reduce
+                   (fn [v entity]
+                     (if (:program entity)
+                       (throw (ex-info "Only uncompiled entities can be assoc'ed to an instanced entity" {}))
+                       (into v (get-in entity [:uniforms uni-name]))))
+                   []
+                   entities)
+        data-len (if (seq entities)
+                   (/ (count new-data) (count entities))
+                   0)
+        start-offset (* start-index data-len)
+        end-offset (* end-index data-len)]
+    (update-in instanced-entity [:attributes attr-name]
+               (fn [attr]
+                 (if attr
+                   (update attr :data
+                     (fn [data]
+                       (let [v1 (subvec data 0 start-offset)
+                             v2 (subvec data start-offset end-offset)
+                             v3 (subvec data end-offset)]
+                         (->> v3
+                              (into new-data)
+                              (into v1)
+                              (into [])))))
+                   {:data (vec new-data)
+                    :divisor 1})))))
+
 ;; InstancedFontEntity
 
 (def ^:private instanced-font-vertex-shader
@@ -106,10 +134,22 @@
   (camera [entity cam] (camera entity cam))
   i/IInstanced
   (assoc [instanced-entity i entity]
-    (reduce-kv
-      (partial u/assoc-instance-attr i entity)
-      instanced-entity
-      instanced-font-attrs->unis))
+    (cond
+      (map? entity)
+      (reduce-kv
+        (partial u/assoc-instance-attr i entity)
+        instanced-entity
+        instanced-font-attrs->unis)
+      (vector? entity)
+      (let [characters (:characters instanced-entity)
+            prev-lines (subvec characters 0 i)
+            prev-count (reduce + 0 (map count prev-lines))
+            curr-count (count (get characters i))
+            total-count (+ prev-count curr-count)]
+        (reduce-kv
+          (partial replace-instance-attr prev-count total-count entity)
+          instanced-entity
+          instanced-font-attrs->unis))))
   (dissoc [instanced-entity i]
     (reduce-kv
       (partial u/dissoc-instance-attr i)
