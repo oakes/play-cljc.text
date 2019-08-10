@@ -45,24 +45,23 @@
                        (throw (ex-info "Only uncompiled entities can be assoc'ed to an instanced entity" {}))
                        (into v (get-in entity [:uniforms uni-name]))))
                    []
-                   entities)
-        data-len (if (seq entities)
-                   (/ (count new-data) (count entities))
-                   0)
-        start-offset (* start-index data-len)
-        end-offset (* end-index data-len)]
+                   entities)]
     (update-in instanced-entity [:attributes attr-name]
                (fn [attr]
                  (if attr
-                   (update attr :data
-                     (fn [data]
-                       (let [v1 (subvec data 0 start-offset)
-                             v2 (subvec data start-offset end-offset)
-                             v3 (subvec data end-offset)]
-                         (->> v3
-                              (into new-data)
-                              (into v1)
-                              (into [])))))
+                   (let [{:keys [size iter]} (u/merge-attribute-opts instanced-entity attr-name attr)
+                         data-len (* size iter)
+                         start-offset (* start-index data-len)
+                         end-offset (* end-index data-len)]
+                     (update attr :data
+                       (fn [data]
+                         (let [v1 (subvec data 0 start-offset)
+                               v2 (subvec data start-offset end-offset)
+                               v3 (subvec data end-offset)]
+                           (->> v3
+                                (into new-data)
+                                (into v1)
+                                (into []))))))
                    {:data (vec new-data)
                     :divisor 1})))))
 
