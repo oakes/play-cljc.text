@@ -152,10 +152,10 @@
       instanced-entity
       instanced-font-attrs->unis))
   (dissoc [instanced-entity i]
-    (reduce-kv
+    (reduce
       (partial u/dissoc-instance-attr i)
       instanced-entity
-      instanced-font-attrs->unis)))
+      (keys instanced-font-attrs->unis))))
 
 (defn assoc-line [instanced-entity i entities]
   (let [characters (:characters instanced-entity)
