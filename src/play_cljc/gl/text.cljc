@@ -168,6 +168,15 @@
       instanced-entity
       instanced-font-attrs->unis)))
 
+(defn insert-line [instanced-entity i entities]
+  (let [characters (:characters instanced-entity)
+        prev-lines (subvec characters 0 i)
+        prev-count (reduce + 0 (map count prev-lines))]
+    (reduce-kv
+      (partial replace-instance-attr prev-count prev-count entities)
+      instanced-entity
+      instanced-font-attrs->unis)))
+
 (defn dissoc-line [instanced-entity i]
   (let [characters (:characters instanced-entity)
         prev-lines (subvec characters 0 i)
