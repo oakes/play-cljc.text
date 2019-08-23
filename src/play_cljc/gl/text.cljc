@@ -38,47 +38,6 @@
    0 -1  0
    0  0  1])
 
-(defn- replace-instance-attr [start-index end-index entities instanced-entity attr-name uni-name]
-  (let [new-data (reduce
-                   (fn [v entity]
-                     (if (:program entity)
-                       (throw (ex-info "Only uncompiled entities can be assoc'ed to an instanced entity" {}))
-                       (into v (get-in entity [:uniforms uni-name]))))
-                   []
-                   entities)]
-    (update-in instanced-entity [:attributes attr-name]
-               (fn [attr]
-                 (if attr
-                   (let [{:keys [size iter]} (u/merge-attribute-opts instanced-entity attr-name attr)
-                         data-len (* size iter)
-                         start-offset (* start-index data-len)
-                         end-offset (* end-index data-len)]
-                     (update attr :data
-                       (fn [data]
-                         (let [v1 (subvec data 0 start-offset)
-                               v2 (subvec data start-offset end-offset)
-                               v3 (subvec data end-offset)]
-                           (->> v3
-                                (into new-data)
-                                (into v1)
-                                (into []))))))
-                   {:data (vec new-data)
-                    :divisor 1})))))
-
-(defn- dissoc-instance-attr [start-index end-index instanced-entity attr-name]
-  (update-in instanced-entity [:attributes attr-name]
-             (fn [attr]
-               (let [{:keys [size iter]} (u/merge-attribute-opts instanced-entity attr-name attr)
-                     data-len (* size iter)
-                     start-offset (* start-index data-len)
-                     end-offset (* end-index data-len)]
-                 (update attr :data
-                         (fn [data]
-                           (let [v1 (subvec data 0 start-offset)
-                                 v2 (subvec data start-offset end-offset)
-                                 v3 (subvec data end-offset)]
-                             (into (into [] v1) v3))))))))
-
 ;; InstancedFontEntity
 
 (def ^:private instanced-font-vertex-shader
@@ -154,37 +113,6 @@
   (dissoc [instanced-entity i]
     (reduce
       (partial u/dissoc-instance-attr i)
-      instanced-entity
-      (keys instanced-font-attrs->unis))))
-
-(defn assoc-line [instanced-entity i entities]
-  (let [characters (:characters instanced-entity)
-        prev-lines (subvec characters 0 i)
-        prev-count (reduce + 0 (map count prev-lines))
-        curr-count (count (get characters i))
-        total-count (+ prev-count curr-count)]
-    (reduce-kv
-      (partial replace-instance-attr prev-count total-count entities)
-      instanced-entity
-      instanced-font-attrs->unis)))
-
-(defn insert-line [instanced-entity i entities]
-  (let [characters (:characters instanced-entity)
-        prev-lines (subvec characters 0 i)
-        prev-count (reduce + 0 (map count prev-lines))]
-    (reduce-kv
-      (partial replace-instance-attr prev-count prev-count entities)
-      instanced-entity
-      instanced-font-attrs->unis)))
-
-(defn dissoc-line [instanced-entity i]
-  (let [characters (:characters instanced-entity)
-        prev-lines (subvec characters 0 i)
-        prev-count (reduce + 0 (map count prev-lines))
-        curr-count (count (get characters i))
-        total-count (+ prev-count curr-count)]
-    (reduce
-      (partial dissoc-instance-attr prev-count total-count)
       instanced-entity
       (keys instanced-font-attrs->unis))))
 
