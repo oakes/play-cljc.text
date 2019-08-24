@@ -91,7 +91,7 @@
     a_texture_matrix u_texture_matrix
     a_color u_color})
 
-(defrecord InstancedFontEntity [baked-font characters])
+(defrecord InstancedFontEntity [baked-font])
 
 (extend-type InstancedFontEntity
   t/IProject
@@ -188,8 +188,7 @@
   (->instanced-entity [entity]
     (-> entity
         (assoc :vertex instanced-font-vertex-shader
-               :fragment instanced-font-fragment-shader
-               :characters [])
+               :fragment instanced-font-fragment-shader)
         (update :uniforms dissoc
                 'u_matrix 'u_texture_matrix 'u_color
                 'u_scale_matrix 'u_translate_matrix)
