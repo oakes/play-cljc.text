@@ -29,9 +29,9 @@
   ([path font-height bitmap]
    (->baked-font path font-height bitmap default-first-char default-char-buffer-size))
   ([path font-height bitmap first-char char-buffer-size]
-   (let [ttf-bytes (cond-> path
-                           (string? path)
-                           resource->bytes)
+   (let [^bytes ttf-bytes (cond-> path
+                                  (string? path)
+                                  resource->bytes)
          ttf (doto (java.nio.ByteBuffer/allocateDirect (alength ttf-bytes))
                (.order (java.nio.ByteOrder/nativeOrder))
                (.put ttf-bytes)
@@ -53,14 +53,14 @@
          scale (double (STBTruetype/stbtt_ScaleForPixelHeight info font-height))
          baseline (* ascent scale)
          chars (->> cdata .iterator iterator-seq
-                    (mapv (fn [q]
+                    (mapv (fn [^STBTTBakedChar q]
                             {:x (int (.x0 q))
                              :y (int (.y0 q))
                              :w (int (- (.x1 q) (.x0 q)))
                              :h (int (- (.y1 q) (.y0 q)))
-                             :xoff (double (.xoff q))
-                             :yoff (double (.yoff q))
-                             :xadv (double (.xadvance q))})))]
+                             :xoff (float (.xoff q))
+                             :yoff (float (.yoff q))
+                             :xadv (float (.xadvance q))})))]
      {:baked-chars chars
       :ascent ascent
       :descent descent
@@ -87,6 +87,6 @@
                                                 (.get buf arr)
                                                 (deliver image arr))))
                                           0 width height 1 data 0)
-    (str "data:image/png;base64,"
-         (-> @image base64/encode (String. "UTF-8")))))
+    (let [^bytes barray (base64/encode @image)]
+      (str "data:image/png;base64," (String. barray "UTF-8")))))
 

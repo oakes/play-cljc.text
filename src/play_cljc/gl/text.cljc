@@ -234,12 +234,12 @@
   (when-not (:program font-entity)
     (throw (ex-info "Only compiled font entities can be passed to ->text-entity" {})))
   (loop [text (seq text)
-         total 0
+         total (float 0)
          inner-entities []]
     (if-let [ch (first text)]
       (let [{:keys [x y w h xoff yoff xadv]} (nth baked-chars (- #?(:clj (int ch) :cljs (.charCodeAt ch 0)) first-char))]
         (recur (rest text)
-               (+ total xadv)
+               (+ total (float xadv))
                (conj inner-entities
                      (-> font-entity
                          (t/project bitmap-width bitmap-height)
