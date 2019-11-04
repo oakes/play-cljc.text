@@ -58,9 +58,9 @@
                              :y (int (.y0 q))
                              :w (int (- (.x1 q) (.x0 q)))
                              :h (int (- (.y1 q) (.y0 q)))
-                             :xoff (float (.xoff q))
-                             :yoff (float (.yoff q))
-                             :xadv (float (.xadvance q))})))]
+                             :xoff (double (.xoff q))
+                             :yoff (double (.yoff q))
+                             :xadv (double (.xadvance q))})))]
      {:baked-chars chars
       :ascent ascent
       :descent descent
