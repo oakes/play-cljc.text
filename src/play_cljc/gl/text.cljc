@@ -9,8 +9,6 @@
             #?(:clj  [play-cljc.macros-java :refer [gl]]
                :cljs [play-cljc.macros-js :refer-macros [gl]])))
 
-(def ^:private ^:const reverse-matrix (m/scaling-matrix -1 -1))
-
 (defn- project [entity width height]
   (update-in entity [:uniforms 'u_matrix]
     #(m/multiply-matrices 3 (m/projection-matrix width height) %)))
@@ -27,11 +25,17 @@
   (update-in entity [:uniforms 'u_matrix]
     #(m/multiply-matrices 3 (m/rotation-matrix angle) %)))
 
+(def ^:private ^:const reverse-matrix (m/scaling-matrix -1 -1))
+
 (defn- camera [entity {:keys [matrix]}]
   (update-in entity [:uniforms 'u_matrix]
     #(->> %
           (m/multiply-matrices 3 matrix)
           (m/multiply-matrices 3 reverse-matrix))))
+
+(defn- invert [entity {:keys [matrix]}]
+  (update-in entity [:uniforms 'u_matrix]
+    #(m/multiply-matrices 3 (m/inverse-matrix 3 matrix) %)))
 
 (def ^:private flip-y-matrix
   [1  0  0
@@ -104,6 +108,8 @@
   (rotate [entity angle] (rotate entity angle))
   t/ICamera
   (camera [entity cam] (camera entity cam))
+  t/IInvert
+  (invert [entity cam] (invert entity cam))
   i/IInstanced
   (assoc [instanced-entity i entity]
     (reduce-kv
@@ -173,6 +179,8 @@
   (rotate [entity angle] (rotate entity angle))
   t/ICamera
   (camera [entity cam] (camera entity cam))
+  t/IInvert
+  (invert [entity cam] (invert entity cam))
   t/IColor
   (color [entity rgba]
     (assoc-in entity [:uniforms 'u_color] rgba))
