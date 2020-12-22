@@ -1,14 +1,14 @@
 {:paths ["src"]
  :deps {org.clojure/data.codec {:mvn/version "0.1.1"}}
- :aliases {:dev {:extra-deps {dynadoc {:mvn/version "RELEASE"}
+ :aliases {:dev {:extra-deps {dynadoc/dynadoc {:mvn/version "RELEASE"}
                               org.lwjgl/lwjgl {:mvn/version "3.2.3"}
                               org.lwjgl/lwjgl-glfw {:mvn/version "3.2.3"}
                               org.lwjgl/lwjgl-opengl {:mvn/version "3.2.3"}
                               org.lwjgl/lwjgl-stb {:mvn/version "3.2.3"}
-                              play-cljc {:local/root "../play-cljc"}}
+                              play-cljc/play-cljc {:local/root "../play-cljc"}}
                  :extra-paths ["../play-cljc/dev-resources"]
                  :main-opts ["dev.clj"]}
-           :prod {:extra-deps {leiningen {:mvn/version "2.9.0"}}
+           :prod {:extra-deps {leiningen/leiningen {:mvn/version "2.9.0"}}
                   :main-opts ["prod.clj"]}
            :linux {:extra-deps {org.lwjgl/lwjgl$natives-linux {:mvn/version "3.2.3"}
                                 org.lwjgl/lwjgl-glfw$natives-linux {:mvn/version "3.2.3"}
